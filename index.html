@@ -1,225 +1,1552 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyCast Ultimate | Global Intelligence</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
-        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .accent-gradient { background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%); }
-        
-        /* Search Suggestions */
-        #autocompleteList {
-            max-height: 300px; overflow-y: auto; z-index: 100; display: none;
-            position: absolute; top: 100%; left: 0; right: 0;
-        }
-        .suggestion-item { transition: all 0.2s; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .suggestion-item:hover { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyCast — Weather Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%233b82f6'/><stop offset='100%25' stop-color='%238b5cf6'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g1)'/><circle cx='28' cy='30' r='10' fill='%23fff' opacity='.9'/><ellipse cx='40' cy='34' rx='12' ry='10' fill='%23fff' opacity='.85'/><ellipse cx='20' cy='36' rx='9' ry='8' fill='%23fff' opacity='.8'/><ellipse cx='30' cy='40' rx='18' ry='10' fill='%23fff'/><circle cx='44' cy='20' r='7' fill='%23fbbf24' opacity='.95'/><line x1='44' y1='10' x2='44' y2='7' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/><line x1='44' y1='33' x2='44' y2='30' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/><line x1='34' y1='20' x2='31' y2='20' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/><line x1='57' y1='20' x2='54' y2='20' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/><line x1='37' y1='13' x2='35' y2='11' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/><line x1='53' y1='29' x2='51' y2='27' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0d0f14;
+    --bg-card: #161922;
+    --bg-card2: #1c2030;
+    --accent-orange: #f97316;
+    --accent-blue: #3b82f6;
+    --accent-purple: #8b5cf6;
+    --accent-green: #22c55e;
+    --accent-yellow: #eab308;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: rgba(255,255,255,0.07);
+    --navbar-h: 58px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Outfit',sans-serif;
+    background:var(--bg-primary);
+    color:var(--text-primary);
+    min-height:100vh;
+    padding: calc(var(--navbar-h) + 14px) 14px 14px;
+    background-image:
+      radial-gradient(ellipse at 10% 20%,rgba(59,130,246,0.05) 0%,transparent 50%),
+      radial-gradient(ellipse at 90% 80%,rgba(249,115,22,0.05) 0%,transparent 50%);
+  }
 
-        /* Scrollbars */
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        
-        /* Animations */
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .card-hover:hover { transform: translateY(-5px); border-color: #38bdf8; transition: 0.3s; }
-    </style>
+  /* ── NAVBAR ── */
+  .navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--navbar-h);
+    z-index: 200;
+    background: rgba(13,15,20,0.85);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+  }
+  /* Logo */
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 14px rgba(59,130,246,0.4);
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #e2e8f0 30%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo-text span {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo-badge {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--accent-blue);
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px;
+    padding: 2px 5px;
+    text-transform: uppercase;
+    align-self: flex-end;
+    margin-bottom: 2px;
+  }
+
+  /* Nav search */
+  .nav-search-wrap {
+    flex: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .nav-search-bar {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 22px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    padding: 8px 40px 8px 38px;
+    outline: none;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+    box-sizing: border-box;
+  }
+  .nav-search-bar::placeholder { color: var(--text-muted); }
+  .nav-search-bar:focus {
+    border-color: rgba(59,130,246,.55);
+    background: rgba(255,255,255,0.09);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+  .nav-search-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    font-size: 13px; pointer-events: none; opacity: .45;
+  }
+  .nav-search-btn {
+    position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+    background: linear-gradient(135deg,#3b82f6,#6366f1);
+    border: none; border-radius: 17px; color: #fff;
+    font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600;
+    padding: 5px 12px; cursor: pointer; transition: opacity .2s, transform .15s;
+    letter-spacing: 0.2px;
+  }
+  .nav-search-btn:hover { opacity: .9; transform: translateY(-50%) scale(1.03); }
+  .nav-search-clear {
+    position: absolute; right: 72px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--text-muted); font-size: 14px;
+    cursor: pointer; line-height: 1; padding: 2px 4px; display: none;
+    transition: color .2s;
+  }
+  .nav-search-clear:hover { color: var(--text-primary); }
+
+  /* Suggestions dropdown (attached to navbar search) */
+  .nav-suggestions {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: #141720;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    z-index: 300;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+    display: none;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .nav-suggestions.open { display: block; }
+
+  /* Nav right items */
+  .nav-right {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto;
+  }
+  .nav-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--text-secondary);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+  }
+  .nav-tag {
+    font-size: 11px; color: var(--accent-green);
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 6px; padding: 4px 9px; font-weight: 500;
+  }
+  /* Suggestion items (shared) */
+  .sug-item {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px; cursor:pointer;
+    transition:background .15s;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .sug-item:last-child { border-bottom:none; }
+  .sug-item:hover, .sug-item.focused { background:rgba(59,130,246,.13); }
+  .sug-pin { font-size:13px; flex-shrink:0; }
+  .sug-main { font-size:13px; font-weight:500; color:var(--text-primary); }
+  .sug-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .sug-country {
+    margin-left:auto; font-size:10px;
+    background:rgba(255,255,255,0.07);
+    border-radius:5px; padding:2px 6px;
+    color:var(--text-secondary); flex-shrink:0;
+  }
+  .sug-empty { padding:16px; text-align:center; font-size:12px; color:var(--text-muted); }
+  .sug-loading {
+    padding:16px; text-align:center; font-size:12px; color:var(--text-secondary);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .sug-spin {
+    width:14px; height:14px;
+    border:2px solid rgba(255,255,255,.1);
+    border-top-color:var(--accent-blue);
+    border-radius:50%;
+    animation:spin .6s linear infinite;
+  }
+
+  .dashboard {
+    max-width:1380px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:320px 1fr 210px;
+    grid-template-rows:auto auto auto;
+    gap:10px;
+  }
+  .card {
+    background:var(--bg-card);
+    border-radius:16px;
+    border:1px solid var(--border);
+    padding:18px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(135deg,rgba(255,255,255,0.018) 0%,transparent 60%);
+    pointer-events:none;
+  }
+
+  /* MAIN CARD */
+  .main-card {
+    grid-column:1;
+    grid-row:1/3;
+    background:linear-gradient(150deg,#1a1e2c 0%,#101318 100%);
+    padding:22px;
+  }
+  .main-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:18px;
+  }
+  .loc-row { display:flex; align-items:center; gap:5px; }
+  .loc-pin { color:var(--accent-orange); font-size:13px; }
+  .loc-name { font-size:15px; font-weight:600; }
+  .updated { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .loc-select {
+    background:rgba(255,255,255,0.07);
+    border:1px solid var(--border);
+    border-radius:9px;
+    color:var(--text-primary);
+    font-family:'Outfit',sans-serif;
+    font-size:12px;
+    padding:5px 9px;
+    cursor:pointer;
+    outline:none;
+  }
+  .loc-select option { background:#1c2030; color:#f1f5f9; }
+  .loc-select optgroup { background:#131620; color:#64748b; font-size:11px; }
+  /* SEARCH ERROR TOAST */
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:#ef4444; color:#fff; font-size:13px;
+    padding:10px 20px; border-radius:10px;
+    box-shadow:0 4px 20px rgba(0,0,0,.4);
+    opacity:0; pointer-events:none;
+    transition:opacity .3s, transform .3s;
+    z-index:999;
+    white-space:nowrap;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+
+  .weather-vis {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:16px 0 6px;
+    position:relative;
+  }
+  .wi-main {
+    font-size:76px;
+    line-height:1;
+    animation:float 3s ease-in-out infinite;
+    filter:drop-shadow(0 0 18px rgba(255,200,50,0.35));
+  }
+  .wi-main.night { filter:drop-shadow(0 0 18px rgba(150,180,255,0.45)); }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+  .temp-big { font-size:58px; font-weight:700; letter-spacing:-3px; line-height:1; }
+  .desc-txt { font-size:14px; color:var(--text-secondary); margin-top:3px; }
+  .feels-txt { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .dots {
+    position:absolute; right:-4px; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:5px;
+  }
+  .dot { width:7px; height:7px; border-radius:50%; }
+  .dot-o { background:var(--accent-orange); }
+  .dot-b { background:var(--accent-blue); }
+  .dot-p { background:var(--accent-purple); }
+  .dot-e { border:1.5px solid var(--text-muted); }
+  .city-tabs { display:flex; gap:7px; margin-top:18px; position:relative; }
+  .ctab {
+    flex:1; background:rgba(255,255,255,0.04); border-radius:10px;
+    padding:9px 11px; cursor:pointer; border:1px solid transparent; transition:all .2s;
+  }
+  .ctab.active { background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.1); }
+  .ctab-name { font-size:11px; color:var(--text-secondary); }
+  .ctab-temp { font-size:14px; font-weight:600; margin-top:2px; }
+  .ctab-arr { position:absolute; right:-6px; top:50%; transform:translateY(-50%); color:var(--text-muted); }
+
+  /* FORECAST ROW */
+  .fc-row {
+    grid-column:2/4;
+    grid-row:1;
+    display:flex;
+    gap:7px;
+  }
+  .fc-day {
+    flex:1; background:var(--bg-card); border-radius:13px;
+    border:1px solid var(--border); padding:12px 8px;
+    text-align:center; cursor:pointer; transition:all .2s;
+  }
+  .fc-day:hover,.fc-day.active { background:var(--bg-card2); border-color:rgba(255,255,255,0.11); }
+  .fc-icon { font-size:24px; margin-bottom:5px; display:block; }
+  .fc-name { font-size:10px; color:var(--text-secondary); margin-bottom:2px; }
+  .fc-tmp { font-size:13px; font-weight:600; }
+  .fc-lo { font-size:10px; color:var(--text-muted); }
+
+  /* CHART */
+  .chart-card { grid-column:2; grid-row:2; padding:18px; }
+  .sec-title { font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:14px; }
+  .chart-wrap { position:relative; height:150px; }
+
+  /* SUN */
+  .sun-card { grid-column:3; grid-row:2; display:flex; flex-direction:column; justify-content:center; gap:18px; }
+  .sun-title { font-size:13px; color:var(--text-secondary); font-weight:600; margin-bottom:4px; }
+  .sun-item { display:flex; align-items:center; gap:10px; }
+  .sun-ico { font-size:26px; }
+  .sun-lbl { font-size:10px; color:var(--text-muted); }
+  .sun-time { font-size:17px; font-weight:600; font-family:'JetBrains Mono',monospace; }
+
+  /* STATS */
+  .stats-grid {
+    grid-column:1; grid-row:3;
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  }
+  .stat-c {
+    background:var(--bg-card); border-radius:13px;
+    border:1px solid var(--border); padding:14px;
+  }
+  .stat-lbl { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); margin-bottom:6px; }
+  .stat-ico { font-size:13px; }
+  .stat-val { font-size:19px; font-weight:700; }
+  .stat-u { font-size:11px; color:var(--text-muted); font-weight:400; }
+
+  /* AQI */
+  .aqi-card {
+    grid-column:2; grid-row:3;
+    display:grid; grid-template-columns:1fr 1fr;
+    padding:0; overflow:hidden;
+  }
+  .aqi-l {
+    padding:18px; display:flex; flex-direction:column;
+    align-items:center; border-right:1px solid var(--border);
+  }
+  .aqi-t { font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:14px; align-self:flex-start; }
+  .aqi-ring {
+    width:110px; height:110px; border-radius:50%;
+    border:3.5px solid transparent;
+    background:linear-gradient(#161922,#161922) padding-box,
+               linear-gradient(135deg,#22c55e,#16a34a) border-box;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    box-shadow:0 0 28px rgba(34,197,94,.2);
+    animation:pulse-glow 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-glow { 0%,100%{opacity:.75} 50%{opacity:1} }
+  .aqi-status { font-size:12px; color:var(--accent-green); font-weight:500; }
+  .aqi-num { font-size:28px; font-weight:700; color:var(--accent-green); }
+  .aqi-cap { font-size:10px; color:var(--text-muted); margin-top:8px; text-align:center; }
+  .aqi-r { padding:18px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .aqi-s-hd { display:flex; align-items:center; gap:4px; margin-bottom:1px; }
+  .aqi-dot { width:7px; height:7px; border-radius:50%; }
+  .aqi-s-nm { font-size:10px; color:var(--text-muted); }
+  .aqi-s-v { font-size:20px; font-weight:700; }
+
+  /* RAIN */
+  .rain-card { grid-column:3; grid-row:3; padding:16px; }
+  .rain-title { font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px; }
+  .rb-item { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+  .rb-day { font-size:10px; color:var(--text-secondary); width:55px; flex-shrink:0; }
+  .rb-track { flex:1; height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+  .rb-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--accent-blue),rgba(59,130,246,.5)); transition:width .8s ease; }
+  .rb-pcls { display:flex; justify-content:space-between; font-size:9px; color:var(--text-muted); margin-top:4px; padding-left:62px; }
+
+  /* LOADING */
+  #loader {
+    position:fixed; inset:0; background:var(--bg-primary);
+    display:flex; align-items:center; justify-content:center;
+    z-index:999; transition:opacity .5s;
+  }
+  .spinner {
+    width:44px; height:44px; border:3px solid rgba(255,255,255,.08);
+    border-top-color:var(--accent-blue); border-radius:50%;
+    animation:spin .75s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .card,.fc-day,.stat-c { animation:fadeUp .4s ease both; }
+</style>
 </head>
-<body class="min-h-screen p-4 md:p-10">
+<body>
 
-    <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col lg:flex-row justify-between items-center mb-16 gap-8">
-            <div class="text-center lg:text-left">
-                <h1 class="text-6xl font-black tracking-tighter italic">Sky<span class="text-sky-400">Cast</span></h1>
-                <p class="text-slate-500 font-medium tracking-[0.2em] uppercase text-xs mt-2">Precision Satellite Data 2026</p>
-            </div>
-            
-            <div class="relative w-full md:w-[550px]">
-                <div class="relative group">
-                    <input type="text" id="citySearch" placeholder="Search any city in the world..." 
-                        autocomplete="off"
-                        class="w-full bg-slate-900 border-2 border-slate-800 rounded-3xl px-8 py-6 focus:outline-none focus:border-sky-500 transition-all shadow-2xl text-xl"
-                        oninput="searchGlobalCities(this.value)">
-                    <div id="autocompleteList" class="glass mt-3 rounded-2xl border border-slate-700 shadow-2xl"></div>
-                </div>
-            </div>
-        </header>
+<div id="loader"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
 
-        <div id="status" class="hidden mb-10 p-4 rounded-2xl text-center glass border-sky-500/30 text-sky-400 animate-pulse"></div>
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <!-- Logo -->
+  <a class="nav-logo" href="#">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="8" r="4" fill="#fbbf24" opacity="0.95"/>
+        <line x1="12" y1="1" x2="12" y2="3" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="12" y1="21" x2="12" y2="19" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="1" y1="8" x2="3" y2="8" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="23" y1="8" x2="21" y2="8" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M9 16.5a4 4 0 0 1 0-8h.5A5.5 5.5 0 1 1 18 14.5H9z" fill="white" opacity="0.95"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Sky<span>Cast</span></div>
+    </div>
+    <span class="logo-badge">Live</span>
+  </a>
 
-        <div id="hero" class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="relative">
-                <div class="absolute -inset-10 bg-sky-500/20 rounded-full blur-3xl animate-pulse"></div>
-                <img src="https://cdn-icons-png.flaticon.com/512/4064/4064276.png" class="w-64 h-64 animate-float relative z-10" alt="3D Weather Icon">
-            </div>
-            <h2 class="text-5xl font-bold mt-10 tracking-tight">Explore the Atmosphere.</h2>
-            <p class="text-slate-500 mt-4 max-w-lg text-lg">Enter a location to visualize real-time air pressure, humidity, and 5-day global forecasts.</p>
+  <!-- Search -->
+  <div class="nav-search-wrap" id="searchWrap">
+    <span class="nav-search-icon">🔍</span>
+    <input
+      type="text"
+      class="nav-search-bar"
+      id="searchInput"
+      placeholder="Search city, town, village, ZIP…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button class="nav-search-clear" id="searchClear" title="Clear">✕</button>
+    <button class="nav-search-btn" id="searchBtn" onclick="triggerSearch()">Search</button>
+    <div class="nav-suggestions" id="suggestions"></div>
+  </div>
+
+  <!-- Right -->
+  <div class="nav-right">
+    <div class="nav-time" id="navTime">--:--:--</div>
+    <div class="nav-tag">🌐 Live Weather</div>
+  </div>
+</nav>
+
+<div class="dashboard">
+  <!-- MAIN CARD -->
+  <div class="card main-card">
+    <div class="main-header">
+      <div>
+        <div class="loc-row">
+          <span class="loc-pin">📍</span>
+          <span class="loc-name" id="cityName">--</span>
         </div>
-
-        <main id="dashboard" class="hidden space-y-10 animate-in">
-            
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <div class="lg:col-span-8 glass p-10 rounded-[3.5rem] relative overflow-hidden flex flex-col justify-between">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h2 id="location" class="text-7xl font-bold tracking-tighter">--</h2>
-                            <p id="countryCode" class="text-sky-400 font-black tracking-[0.3em] uppercase text-sm mt-2"></p>
-                        </div>
-                        <img id="mainIcon" src="" class="w-40 h-40 drop-shadow-2xl" alt="">
-                    </div>
-                    <div class="mt-10">
-                        <div class="flex items-baseline gap-6">
-                            <h3 id="temp" class="text-[12rem] font-black leading-none tracking-tighter">0°</h3>
-                            <div>
-                                <p id="desc" class="text-4xl text-slate-300 font-light capitalize"></p>
-                                <p class="text-slate-500 text-lg mt-1">High: <span id="tMax" class="text-white">--</span> • Low: <span id="tMin" class="text-white">--</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-4 grid grid-cols-1 gap-6">
-                    <div class="glass p-8 rounded-[2.5rem] card-hover flex items-center justify-between">
-                        <div><p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Feels Like</p><p id="feel" class="text-4xl font-black">--</p></div>
-                        <img src="https://cdn-icons-png.flaticon.com/512/1684/1684375.png" class="w-16 h-16 opacity-80" alt="Thermometer">
-                    </div>
-                    <div class="glass p-8 rounded-[2.5rem] card-hover flex items-center justify-between">
-                        <div><p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Humidity</p><p id="hum" class="text-4xl font-black">--</p></div>
-                        <img src="https://cdn-icons-png.flaticon.com/512/4148/4148407.png" class="w-16 h-16 opacity-80" alt="Water">
-                    </div>
-                </div>
-            </div>
-
-            <section class="space-y-6">
-                <h4 class="text-2xl font-bold ml-4">Next 24 Hours <span class="text-sky-400 text-sm ml-2 font-normal opacity-50">3-Hour Increments</span></h4>
-                <div id="hourlyContainer" class="flex gap-6 overflow-x-auto pb-6 hide-scroll px-2"></div>
-            </section>
-
-            <section class="space-y-6">
-                <h4 class="text-2xl font-bold ml-4">Extended 5-Day Forecast</h4>
-                <div id="dailyContainer" class="grid grid-cols-2 md:grid-cols-5 gap-6"></div>
-            </section>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="glass p-8 rounded-3xl text-center card-hover">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Wind Speed</p>
-                    <p id="wind" class="text-2xl font-black">--</p>
-                </div>
-                <div class="glass p-8 rounded-3xl text-center card-hover">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Pressure</p>
-                    <p id="prs" class="text-2xl font-black">--</p>
-                </div>
-                <div class="glass p-8 rounded-3xl text-center card-hover">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Sea Level</p>
-                    <p id="sea" class="text-2xl font-black">--</p>
-                </div>
-                <div class="glass p-8 rounded-3xl text-center card-hover">
-                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Visibility</p>
-                    <p id="vis" class="text-2xl font-black">--</p>
-                </div>
-            </div>
-        </main>
+        <div class="updated" id="lastUpdated">Loading...</div>
+      </div>
+      <select class="loc-select" id="locSel" onchange="changeCity(this.value)" size="1">
+        <!-- INDIA -->
+        <optgroup label="🇮🇳 India">
+          <option value="Etah,IN" selected>Etah</option>
+          <option value="Delhi,IN">Delhi</option>
+          <option value="Mumbai,IN">Mumbai</option>
+          <option value="Bangalore,IN">Bangalore</option>
+          <option value="Hyderabad,IN">Hyderabad</option>
+          <option value="Chennai,IN">Chennai</option>
+          <option value="Kolkata,IN">Kolkata</option>
+          <option value="Jaipur,IN">Jaipur</option>
+          <option value="Agra,IN">Agra</option>
+          <option value="Lucknow,IN">Lucknow</option>
+          <option value="Kanpur,IN">Kanpur</option>
+          <option value="Varanasi,IN">Varanasi</option>
+          <option value="Pune,IN">Pune</option>
+          <option value="Ahmedabad,IN">Ahmedabad</option>
+          <option value="Surat,IN">Surat</option>
+          <option value="Patna,IN">Patna</option>
+          <option value="Bhopal,IN">Bhopal</option>
+          <option value="Indore,IN">Indore</option>
+          <option value="Nagpur,IN">Nagpur</option>
+          <option value="Visakhapatnam,IN">Visakhapatnam</option>
+          <option value="Coimbatore,IN">Coimbatore</option>
+          <option value="Kochi,IN">Kochi</option>
+          <option value="Thiruvananthapuram,IN">Thiruvananthapuram</option>
+          <option value="Chandigarh,IN">Chandigarh</option>
+          <option value="Amritsar,IN">Amritsar</option>
+          <option value="Ludhiana,IN">Ludhiana</option>
+          <option value="Guwahati,IN">Guwahati</option>
+          <option value="Bhubaneswar,IN">Bhubaneswar</option>
+          <option value="Raipur,IN">Raipur</option>
+          <option value="Ranchi,IN">Ranchi</option>
+          <option value="Dehradun,IN">Dehradun</option>
+          <option value="Shimla,IN">Shimla</option>
+          <option value="Srinagar,IN">Srinagar</option>
+          <option value="Jammu,IN">Jammu</option>
+          <option value="Jodhpur,IN">Jodhpur</option>
+          <option value="Udaipur,IN">Udaipur</option>
+          <option value="Ajmer,IN">Ajmer</option>
+          <option value="Mathura,IN">Mathura</option>
+          <option value="Allahabad,IN">Allahabad (Prayagraj)</option>
+          <option value="Meerut,IN">Meerut</option>
+          <option value="Ghaziabad,IN">Ghaziabad</option>
+          <option value="Faridabad,IN">Faridabad</option>
+          <option value="Noida,IN">Noida</option>
+          <option value="Gurugram,IN">Gurugram</option>
+          <option value="Mysore,IN">Mysore</option>
+          <option value="Mangalore,IN">Mangalore</option>
+          <option value="Hubli,IN">Hubli</option>
+          <option value="Madurai,IN">Madurai</option>
+          <option value="Tiruchirappalli,IN">Tiruchirappalli</option>
+          <option value="Salem,IN">Salem</option>
+          <option value="Vijayawada,IN">Vijayawada</option>
+          <option value="Rajkot,IN">Rajkot</option>
+          <option value="Vadodara,IN">Vadodara</option>
+          <option value="Goa,IN">Goa (Panaji)</option>
+          <option value="Port Blair,IN">Port Blair</option>
+          <option value="Shillong,IN">Shillong</option>
+          <option value="Imphal,IN">Imphal</option>
+          <option value="Kohima,IN">Kohima</option>
+          <option value="Aizawl,IN">Aizawl</option>
+          <option value="Gangtok,IN">Gangtok</option>
+          <option value="Leh,IN">Leh</option>
+        </optgroup>
+        <!-- SOUTH ASIA -->
+        <optgroup label="🌏 South Asia">
+          <option value="Karachi,PK">Karachi, Pakistan</option>
+          <option value="Lahore,PK">Lahore, Pakistan</option>
+          <option value="Islamabad,PK">Islamabad, Pakistan</option>
+          <option value="Rawalpindi,PK">Rawalpindi, Pakistan</option>
+          <option value="Faisalabad,PK">Faisalabad, Pakistan</option>
+          <option value="Peshawar,PK">Peshawar, Pakistan</option>
+          <option value="Multan,PK">Multan, Pakistan</option>
+          <option value="Dhaka,BD">Dhaka, Bangladesh</option>
+          <option value="Chittagong,BD">Chittagong, Bangladesh</option>
+          <option value="Sylhet,BD">Sylhet, Bangladesh</option>
+          <option value="Kathmandu,NP">Kathmandu, Nepal</option>
+          <option value="Pokhara,NP">Pokhara, Nepal</option>
+          <option value="Colombo,LK">Colombo, Sri Lanka</option>
+          <option value="Kandy,LK">Kandy, Sri Lanka</option>
+          <option value="Male,MV">Male, Maldives</option>
+          <option value="Thimphu,BT">Thimphu, Bhutan</option>
+          <option value="Kabul,AF">Kabul, Afghanistan</option>
+          <option value="Kandahar,AF">Kandahar, Afghanistan</option>
+        </optgroup>
+        <!-- EAST ASIA -->
+        <optgroup label="🌏 East Asia">
+          <option value="Tokyo,JP">Tokyo, Japan</option>
+          <option value="Osaka,JP">Osaka, Japan</option>
+          <option value="Kyoto,JP">Kyoto, Japan</option>
+          <option value="Nagoya,JP">Nagoya, Japan</option>
+          <option value="Sapporo,JP">Sapporo, Japan</option>
+          <option value="Fukuoka,JP">Fukuoka, Japan</option>
+          <option value="Hiroshima,JP">Hiroshima, Japan</option>
+          <option value="Beijing,CN">Beijing, China</option>
+          <option value="Shanghai,CN">Shanghai, China</option>
+          <option value="Guangzhou,CN">Guangzhou, China</option>
+          <option value="Shenzhen,CN">Shenzhen, China</option>
+          <option value="Chengdu,CN">Chengdu, China</option>
+          <option value="Wuhan,CN">Wuhan, China</option>
+          <option value="Xi'an,CN">Xi'an, China</option>
+          <option value="Hangzhou,CN">Hangzhou, China</option>
+          <option value="Nanjing,CN">Nanjing, China</option>
+          <option value="Tianjin,CN">Tianjin, China</option>
+          <option value="Chongqing,CN">Chongqing, China</option>
+          <option value="Hong Kong,HK">Hong Kong</option>
+          <option value="Macau,MO">Macau</option>
+          <option value="Seoul,KR">Seoul, South Korea</option>
+          <option value="Busan,KR">Busan, South Korea</option>
+          <option value="Incheon,KR">Incheon, South Korea</option>
+          <option value="Daegu,KR">Daegu, South Korea</option>
+          <option value="Pyongyang,KP">Pyongyang, North Korea</option>
+          <option value="Taipei,TW">Taipei, Taiwan</option>
+          <option value="Kaohsiung,TW">Kaohsiung, Taiwan</option>
+          <option value="Ulaanbaatar,MN">Ulaanbaatar, Mongolia</option>
+        </optgroup>
+        <!-- SOUTHEAST ASIA -->
+        <optgroup label="🌏 Southeast Asia">
+          <option value="Singapore,SG">Singapore</option>
+          <option value="Bangkok,TH">Bangkok, Thailand</option>
+          <option value="Chiang Mai,TH">Chiang Mai, Thailand</option>
+          <option value="Phuket,TH">Phuket, Thailand</option>
+          <option value="Pattaya,TH">Pattaya, Thailand</option>
+          <option value="Jakarta,ID">Jakarta, Indonesia</option>
+          <option value="Surabaya,ID">Surabaya, Indonesia</option>
+          <option value="Bandung,ID">Bandung, Indonesia</option>
+          <option value="Medan,ID">Medan, Indonesia</option>
+          <option value="Bali,ID">Bali, Indonesia</option>
+          <option value="Kuala Lumpur,MY">Kuala Lumpur, Malaysia</option>
+          <option value="George Town,MY">George Town (Penang), Malaysia</option>
+          <option value="Johor Bahru,MY">Johor Bahru, Malaysia</option>
+          <option value="Manila,PH">Manila, Philippines</option>
+          <option value="Cebu City,PH">Cebu City, Philippines</option>
+          <option value="Davao,PH">Davao, Philippines</option>
+          <option value="Ho Chi Minh City,VN">Ho Chi Minh City, Vietnam</option>
+          <option value="Hanoi,VN">Hanoi, Vietnam</option>
+          <option value="Da Nang,VN">Da Nang, Vietnam</option>
+          <option value="Phnom Penh,KH">Phnom Penh, Cambodia</option>
+          <option value="Siem Reap,KH">Siem Reap, Cambodia</option>
+          <option value="Vientiane,LA">Vientiane, Laos</option>
+          <option value="Yangon,MM">Yangon, Myanmar</option>
+          <option value="Mandalay,MM">Mandalay, Myanmar</option>
+          <option value="Naypyidaw,MM">Naypyidaw, Myanmar</option>
+          <option value="Bandar Seri Begawan,BN">Bandar Seri Begawan, Brunei</option>
+          <option value="Dili,TL">Dili, East Timor</option>
+        </optgroup>
+        <!-- CENTRAL ASIA -->
+        <optgroup label="🌍 Central Asia">
+          <option value="Tashkent,UZ">Tashkent, Uzbekistan</option>
+          <option value="Samarkand,UZ">Samarkand, Uzbekistan</option>
+          <option value="Almaty,KZ">Almaty, Kazakhstan</option>
+          <option value="Nur-Sultan,KZ">Astana, Kazakhstan</option>
+          <option value="Bishkek,KG">Bishkek, Kyrgyzstan</option>
+          <option value="Dushanbe,TJ">Dushanbe, Tajikistan</option>
+          <option value="Ashgabat,TM">Ashgabat, Turkmenistan</option>
+        </optgroup>
+        <!-- MIDDLE EAST -->
+        <optgroup label="🌍 Middle East">
+          <option value="Dubai,AE">Dubai, UAE</option>
+          <option value="Abu Dhabi,AE">Abu Dhabi, UAE</option>
+          <option value="Sharjah,AE">Sharjah, UAE</option>
+          <option value="Riyadh,SA">Riyadh, Saudi Arabia</option>
+          <option value="Jeddah,SA">Jeddah, Saudi Arabia</option>
+          <option value="Mecca,SA">Mecca, Saudi Arabia</option>
+          <option value="Medina,SA">Medina, Saudi Arabia</option>
+          <option value="Dammam,SA">Dammam, Saudi Arabia</option>
+          <option value="Kuwait City,KW">Kuwait City, Kuwait</option>
+          <option value="Doha,QA">Doha, Qatar</option>
+          <option value="Manama,BH">Manama, Bahrain</option>
+          <option value="Muscat,OM">Muscat, Oman</option>
+          <option value="Salalah,OM">Salalah, Oman</option>
+          <option value="Amman,JO">Amman, Jordan</option>
+          <option value="Aqaba,JO">Aqaba, Jordan</option>
+          <option value="Beirut,LB">Beirut, Lebanon</option>
+          <option value="Damascus,SY">Damascus, Syria</option>
+          <option value="Aleppo,SY">Aleppo, Syria</option>
+          <option value="Baghdad,IQ">Baghdad, Iraq</option>
+          <option value="Basra,IQ">Basra, Iraq</option>
+          <option value="Erbil,IQ">Erbil, Iraq</option>
+          <option value="Tehran,IR">Tehran, Iran</option>
+          <option value="Isfahan,IR">Isfahan, Iran</option>
+          <option value="Mashhad,IR">Mashhad, Iran</option>
+          <option value="Shiraz,IR">Shiraz, Iran</option>
+          <option value="Tabriz,IR">Tabriz, Iran</option>
+          <option value="Jerusalem,IL">Jerusalem, Israel</option>
+          <option value="Tel Aviv,IL">Tel Aviv, Israel</option>
+          <option value="Haifa,IL">Haifa, Israel</option>
+          <option value="Ankara,TR">Ankara, Turkey</option>
+          <option value="Istanbul,TR">Istanbul, Turkey</option>
+          <option value="Izmir,TR">Izmir, Turkey</option>
+          <option value="Antalya,TR">Antalya, Turkey</option>
+          <option value="Bursa,TR">Bursa, Turkey</option>
+          <option value="Sanaa,YE">Sanaa, Yemen</option>
+          <option value="Aden,YE">Aden, Yemen</option>
+        </optgroup>
+        <!-- EUROPE - WESTERN -->
+        <optgroup label="🇪🇺 Western Europe">
+          <option value="London,GB">London, UK</option>
+          <option value="Manchester,GB">Manchester, UK</option>
+          <option value="Birmingham,GB">Birmingham, UK</option>
+          <option value="Edinburgh,GB">Edinburgh, UK</option>
+          <option value="Glasgow,GB">Glasgow, UK</option>
+          <option value="Cardiff,GB">Cardiff, UK</option>
+          <option value="Belfast,GB">Belfast, UK</option>
+          <option value="Liverpool,GB">Liverpool, UK</option>
+          <option value="Bristol,GB">Bristol, UK</option>
+          <option value="Leeds,GB">Leeds, UK</option>
+          <option value="Paris,FR">Paris, France</option>
+          <option value="Marseille,FR">Marseille, France</option>
+          <option value="Lyon,FR">Lyon, France</option>
+          <option value="Toulouse,FR">Toulouse, France</option>
+          <option value="Nice,FR">Nice, France</option>
+          <option value="Bordeaux,FR">Bordeaux, France</option>
+          <option value="Strasbourg,FR">Strasbourg, France</option>
+          <option value="Berlin,DE">Berlin, Germany</option>
+          <option value="Munich,DE">Munich, Germany</option>
+          <option value="Hamburg,DE">Hamburg, Germany</option>
+          <option value="Frankfurt,DE">Frankfurt, Germany</option>
+          <option value="Cologne,DE">Cologne, Germany</option>
+          <option value="Stuttgart,DE">Stuttgart, Germany</option>
+          <option value="Dusseldorf,DE">Düsseldorf, Germany</option>
+          <option value="Dortmund,DE">Dortmund, Germany</option>
+          <option value="Madrid,ES">Madrid, Spain</option>
+          <option value="Barcelona,ES">Barcelona, Spain</option>
+          <option value="Valencia,ES">Valencia, Spain</option>
+          <option value="Seville,ES">Seville, Spain</option>
+          <option value="Bilbao,ES">Bilbao, Spain</option>
+          <option value="Malaga,ES">Málaga, Spain</option>
+          <option value="Rome,IT">Rome, Italy</option>
+          <option value="Milan,IT">Milan, Italy</option>
+          <option value="Naples,IT">Naples, Italy</option>
+          <option value="Turin,IT">Turin, Italy</option>
+          <option value="Florence,IT">Florence, Italy</option>
+          <option value="Venice,IT">Venice, Italy</option>
+          <option value="Bologna,IT">Bologna, Italy</option>
+          <option value="Amsterdam,NL">Amsterdam, Netherlands</option>
+          <option value="Rotterdam,NL">Rotterdam, Netherlands</option>
+          <option value="The Hague,NL">The Hague, Netherlands</option>
+          <option value="Brussels,BE">Brussels, Belgium</option>
+          <option value="Antwerp,BE">Antwerp, Belgium</option>
+          <option value="Ghent,BE">Ghent, Belgium</option>
+          <option value="Zurich,CH">Zurich, Switzerland</option>
+          <option value="Geneva,CH">Geneva, Switzerland</option>
+          <option value="Basel,CH">Basel, Switzerland</option>
+          <option value="Bern,CH">Bern, Switzerland</option>
+          <option value="Vienna,AT">Vienna, Austria</option>
+          <option value="Salzburg,AT">Salzburg, Austria</option>
+          <option value="Innsbruck,AT">Innsbruck, Austria</option>
+          <option value="Lisbon,PT">Lisbon, Portugal</option>
+          <option value="Porto,PT">Porto, Portugal</option>
+          <option value="Faro,PT">Faro, Portugal</option>
+          <option value="Dublin,IE">Dublin, Ireland</option>
+          <option value="Cork,IE">Cork, Ireland</option>
+          <option value="Luxembourg,LU">Luxembourg City</option>
+          <option value="Monaco,MC">Monaco</option>
+          <option value="Vaduz,LI">Vaduz, Liechtenstein</option>
+        </optgroup>
+        <!-- EUROPE - NORTHERN -->
+        <optgroup label="🇸🇪 Northern Europe">
+          <option value="Stockholm,SE">Stockholm, Sweden</option>
+          <option value="Gothenburg,SE">Gothenburg, Sweden</option>
+          <option value="Malmo,SE">Malmö, Sweden</option>
+          <option value="Oslo,NO">Oslo, Norway</option>
+          <option value="Bergen,NO">Bergen, Norway</option>
+          <option value="Trondheim,NO">Trondheim, Norway</option>
+          <option value="Tromsø,NO">Tromsø, Norway</option>
+          <option value="Copenhagen,DK">Copenhagen, Denmark</option>
+          <option value="Aarhus,DK">Aarhus, Denmark</option>
+          <option value="Helsinki,FI">Helsinki, Finland</option>
+          <option value="Tampere,FI">Tampere, Finland</option>
+          <option value="Oulu,FI">Oulu, Finland</option>
+          <option value="Reykjavik,IS">Reykjavik, Iceland</option>
+          <option value="Akureyri,IS">Akureyri, Iceland</option>
+          <option value="Tallinn,EE">Tallinn, Estonia</option>
+          <option value="Riga,LV">Riga, Latvia</option>
+          <option value="Vilnius,LT">Vilnius, Lithuania</option>
+        </optgroup>
+        <!-- EUROPE - EASTERN -->
+        <optgroup label="🌍 Eastern Europe">
+          <option value="Moscow,RU">Moscow, Russia</option>
+          <option value="Saint Petersburg,RU">Saint Petersburg, Russia</option>
+          <option value="Novosibirsk,RU">Novosibirsk, Russia</option>
+          <option value="Yekaterinburg,RU">Yekaterinburg, Russia</option>
+          <option value="Kazan,RU">Kazan, Russia</option>
+          <option value="Vladivostok,RU">Vladivostok, Russia</option>
+          <option value="Murmansk,RU">Murmansk, Russia</option>
+          <option value="Warsaw,PL">Warsaw, Poland</option>
+          <option value="Krakow,PL">Kraków, Poland</option>
+          <option value="Gdansk,PL">Gdańsk, Poland</option>
+          <option value="Wroclaw,PL">Wrocław, Poland</option>
+          <option value="Prague,CZ">Prague, Czech Republic</option>
+          <option value="Brno,CZ">Brno, Czech Republic</option>
+          <option value="Budapest,HU">Budapest, Hungary</option>
+          <option value="Debrecen,HU">Debrecen, Hungary</option>
+          <option value="Bucharest,RO">Bucharest, Romania</option>
+          <option value="Cluj-Napoca,RO">Cluj-Napoca, Romania</option>
+          <option value="Timisoara,RO">Timișoara, Romania</option>
+          <option value="Sofia,BG">Sofia, Bulgaria</option>
+          <option value="Plovdiv,BG">Plovdiv, Bulgaria</option>
+          <option value="Belgrade,RS">Belgrade, Serbia</option>
+          <option value="Novi Sad,RS">Novi Sad, Serbia</option>
+          <option value="Zagreb,HR">Zagreb, Croatia</option>
+          <option value="Split,HR">Split, Croatia</option>
+          <option value="Dubrovnik,HR">Dubrovnik, Croatia</option>
+          <option value="Ljubljana,SI">Ljubljana, Slovenia</option>
+          <option value="Bratislava,SK">Bratislava, Slovakia</option>
+          <option value="Sarajevo,BA">Sarajevo, Bosnia</option>
+          <option value="Skopje,MK">Skopje, North Macedonia</option>
+          <option value="Tirana,AL">Tirana, Albania</option>
+          <option value="Pristina,XK">Pristina, Kosovo</option>
+          <option value="Podgorica,ME">Podgorica, Montenegro</option>
+          <option value="Athens,GR">Athens, Greece</option>
+          <option value="Thessaloniki,GR">Thessaloniki, Greece</option>
+          <option value="Heraklion,GR">Heraklion, Crete</option>
+          <option value="Kyiv,UA">Kyiv, Ukraine</option>
+          <option value="Kharkiv,UA">Kharkiv, Ukraine</option>
+          <option value="Odessa,UA">Odessa, Ukraine</option>
+          <option value="Minsk,BY">Minsk, Belarus</option>
+          <option value="Chisinau,MD">Chișinău, Moldova</option>
+          <option value="Tbilisi,GE">Tbilisi, Georgia</option>
+          <option value="Batumi,GE">Batumi, Georgia</option>
+          <option value="Yerevan,AM">Yerevan, Armenia</option>
+          <option value="Baku,AZ">Baku, Azerbaijan</option>
+        </optgroup>
+        <!-- NORTH AMERICA -->
+        <optgroup label="🇺🇸 North America">
+          <option value="New York,US">New York, USA</option>
+          <option value="Los Angeles,US">Los Angeles, USA</option>
+          <option value="Chicago,US">Chicago, USA</option>
+          <option value="Houston,US">Houston, USA</option>
+          <option value="Phoenix,US">Phoenix, USA</option>
+          <option value="Philadelphia,US">Philadelphia, USA</option>
+          <option value="San Antonio,US">San Antonio, USA</option>
+          <option value="San Diego,US">San Diego, USA</option>
+          <option value="Dallas,US">Dallas, USA</option>
+          <option value="San Francisco,US">San Francisco, USA</option>
+          <option value="Seattle,US">Seattle, USA</option>
+          <option value="Denver,US">Denver, USA</option>
+          <option value="Washington,US">Washington D.C., USA</option>
+          <option value="Nashville,US">Nashville, USA</option>
+          <option value="Austin,US">Austin, USA</option>
+          <option value="Las Vegas,US">Las Vegas, USA</option>
+          <option value="Boston,US">Boston, USA</option>
+          <option value="Miami,US">Miami, USA</option>
+          <option value="Atlanta,US">Atlanta, USA</option>
+          <option value="Minneapolis,US">Minneapolis, USA</option>
+          <option value="Portland,US">Portland, USA</option>
+          <option value="Detroit,US">Detroit, USA</option>
+          <option value="Memphis,US">Memphis, USA</option>
+          <option value="Baltimore,US">Baltimore, USA</option>
+          <option value="New Orleans,US">New Orleans, USA</option>
+          <option value="Cleveland,US">Cleveland, USA</option>
+          <option value="Honolulu,US">Honolulu, Hawaii, USA</option>
+          <option value="Anchorage,US">Anchorage, Alaska, USA</option>
+          <option value="Toronto,CA">Toronto, Canada</option>
+          <option value="Montreal,CA">Montreal, Canada</option>
+          <option value="Vancouver,CA">Vancouver, Canada</option>
+          <option value="Calgary,CA">Calgary, Canada</option>
+          <option value="Edmonton,CA">Edmonton, Canada</option>
+          <option value="Ottawa,CA">Ottawa, Canada</option>
+          <option value="Winnipeg,CA">Winnipeg, Canada</option>
+          <option value="Quebec City,CA">Quebec City, Canada</option>
+          <option value="Halifax,CA">Halifax, Canada</option>
+          <option value="Yellowknife,CA">Yellowknife, Canada</option>
+          <option value="Mexico City,MX">Mexico City, Mexico</option>
+          <option value="Guadalajara,MX">Guadalajara, Mexico</option>
+          <option value="Monterrey,MX">Monterrey, Mexico</option>
+          <option value="Cancun,MX">Cancun, Mexico</option>
+          <option value="Tijuana,MX">Tijuana, Mexico</option>
+          <option value="Puebla,MX">Puebla, Mexico</option>
+          <option value="Havana,CU">Havana, Cuba</option>
+          <option value="Kingston,JM">Kingston, Jamaica</option>
+          <option value="Port-au-Prince,HT">Port-au-Prince, Haiti</option>
+          <option value="Santo Domingo,DO">Santo Domingo, Dominican Rep.</option>
+          <option value="San Juan,PR">San Juan, Puerto Rico</option>
+          <option value="Nassau,BS">Nassau, Bahamas</option>
+          <option value="Bridgetown,BB">Bridgetown, Barbados</option>
+          <option value="Port of Spain,TT">Port of Spain, Trinidad</option>
+          <option value="Guatemala City,GT">Guatemala City</option>
+          <option value="San Salvador,SV">San Salvador, El Salvador</option>
+          <option value="Tegucigalpa,HN">Tegucigalpa, Honduras</option>
+          <option value="Managua,NI">Managua, Nicaragua</option>
+          <option value="San Jose,CR">San José, Costa Rica</option>
+          <option value="Panama City,PA">Panama City, Panama</option>
+          <option value="Belmopan,BZ">Belmopan, Belize</option>
+        </optgroup>
+        <!-- SOUTH AMERICA -->
+        <optgroup label="🌎 South America">
+          <option value="São Paulo,BR">São Paulo, Brazil</option>
+          <option value="Rio de Janeiro,BR">Rio de Janeiro, Brazil</option>
+          <option value="Brasilia,BR">Brasília, Brazil</option>
+          <option value="Salvador,BR">Salvador, Brazil</option>
+          <option value="Fortaleza,BR">Fortaleza, Brazil</option>
+          <option value="Manaus,BR">Manaus, Brazil</option>
+          <option value="Curitiba,BR">Curitiba, Brazil</option>
+          <option value="Belem,BR">Belém, Brazil</option>
+          <option value="Porto Alegre,BR">Porto Alegre, Brazil</option>
+          <option value="Buenos Aires,AR">Buenos Aires, Argentina</option>
+          <option value="Cordoba,AR">Córdoba, Argentina</option>
+          <option value="Rosario,AR">Rosario, Argentina</option>
+          <option value="Mendoza,AR">Mendoza, Argentina</option>
+          <option value="Tucuman,AR">Tucumán, Argentina</option>
+          <option value="Ushuaia,AR">Ushuaia, Argentina</option>
+          <option value="Santiago,CL">Santiago, Chile</option>
+          <option value="Valparaiso,CL">Valparaíso, Chile</option>
+          <option value="Concepcion,CL">Concepción, Chile</option>
+          <option value="Bogota,CO">Bogotá, Colombia</option>
+          <option value="Medellin,CO">Medellín, Colombia</option>
+          <option value="Cali,CO">Cali, Colombia</option>
+          <option value="Cartagena,CO">Cartagena, Colombia</option>
+          <option value="Lima,PE">Lima, Peru</option>
+          <option value="Arequipa,PE">Arequipa, Peru</option>
+          <option value="Cusco,PE">Cusco, Peru</option>
+          <option value="Caracas,VE">Caracas, Venezuela</option>
+          <option value="Maracaibo,VE">Maracaibo, Venezuela</option>
+          <option value="Quito,EC">Quito, Ecuador</option>
+          <option value="Guayaquil,EC">Guayaquil, Ecuador</option>
+          <option value="La Paz,BO">La Paz, Bolivia</option>
+          <option value="Santa Cruz de la Sierra,BO">Santa Cruz, Bolivia</option>
+          <option value="Asuncion,PY">Asunción, Paraguay</option>
+          <option value="Montevideo,UY">Montevideo, Uruguay</option>
+          <option value="Georgetown,GY">Georgetown, Guyana</option>
+          <option value="Paramaribo,SR">Paramaribo, Suriname</option>
+          <option value="Cayenne,GF">Cayenne, French Guiana</option>
+        </optgroup>
+        <!-- AFRICA - NORTH -->
+        <optgroup label="🌍 North Africa">
+          <option value="Cairo,EG">Cairo, Egypt</option>
+          <option value="Alexandria,EG">Alexandria, Egypt</option>
+          <option value="Giza,EG">Giza, Egypt</option>
+          <option value="Luxor,EG">Luxor, Egypt</option>
+          <option value="Casablanca,MA">Casablanca, Morocco</option>
+          <option value="Rabat,MA">Rabat, Morocco</option>
+          <option value="Marrakech,MA">Marrakech, Morocco</option>
+          <option value="Fes,MA">Fès, Morocco</option>
+          <option value="Tangier,MA">Tangier, Morocco</option>
+          <option value="Algiers,DZ">Algiers, Algeria</option>
+          <option value="Oran,DZ">Oran, Algeria</option>
+          <option value="Tunis,TN">Tunis, Tunisia</option>
+          <option value="Sfax,TN">Sfax, Tunisia</option>
+          <option value="Tripoli,LY">Tripoli, Libya</option>
+          <option value="Benghazi,LY">Benghazi, Libya</option>
+          <option value="Khartoum,SD">Khartoum, Sudan</option>
+          <option value="Omdurman,SD">Omdurman, Sudan</option>
+        </optgroup>
+        <!-- AFRICA - SUB-SAHARAN -->
+        <optgroup label="🌍 Sub-Saharan Africa">
+          <option value="Lagos,NG">Lagos, Nigeria</option>
+          <option value="Abuja,NG">Abuja, Nigeria</option>
+          <option value="Kano,NG">Kano, Nigeria</option>
+          <option value="Ibadan,NG">Ibadan, Nigeria</option>
+          <option value="Port Harcourt,NG">Port Harcourt, Nigeria</option>
+          <option value="Nairobi,KE">Nairobi, Kenya</option>
+          <option value="Mombasa,KE">Mombasa, Kenya</option>
+          <option value="Kisumu,KE">Kisumu, Kenya</option>
+          <option value="Addis Ababa,ET">Addis Ababa, Ethiopia</option>
+          <option value="Dire Dawa,ET">Dire Dawa, Ethiopia</option>
+          <option value="Johannesburg,ZA">Johannesburg, South Africa</option>
+          <option value="Cape Town,ZA">Cape Town, South Africa</option>
+          <option value="Durban,ZA">Durban, South Africa</option>
+          <option value="Pretoria,ZA">Pretoria, South Africa</option>
+          <option value="Port Elizabeth,ZA">Port Elizabeth, South Africa</option>
+          <option value="Accra,GH">Accra, Ghana</option>
+          <option value="Kumasi,GH">Kumasi, Ghana</option>
+          <option value="Dar es Salaam,TZ">Dar es Salaam, Tanzania</option>
+          <option value="Dodoma,TZ">Dodoma, Tanzania</option>
+          <option value="Zanzibar,TZ">Zanzibar, Tanzania</option>
+          <option value="Kampala,UG">Kampala, Uganda</option>
+          <option value="Entebbe,UG">Entebbe, Uganda</option>
+          <option value="Kigali,RW">Kigali, Rwanda</option>
+          <option value="Bujumbura,BI">Bujumbura, Burundi</option>
+          <option value="Lusaka,ZM">Lusaka, Zambia</option>
+          <option value="Harare,ZW">Harare, Zimbabwe</option>
+          <option value="Bulawayo,ZW">Bulawayo, Zimbabwe</option>
+          <option value="Maputo,MZ">Maputo, Mozambique</option>
+          <option value="Antananarivo,MG">Antananarivo, Madagascar</option>
+          <option value="Lilongwe,MW">Lilongwe, Malawi</option>
+          <option value="Blantyre,MW">Blantyre, Malawi</option>
+          <option value="Luanda,AO">Luanda, Angola</option>
+          <option value="Dakar,SN">Dakar, Senegal</option>
+          <option value="Abidjan,CI">Abidjan, Ivory Coast</option>
+          <option value="Bamako,ML">Bamako, Mali</option>
+          <option value="Ouagadougou,BF">Ouagadougou, Burkina Faso</option>
+          <option value="Niamey,NE">Niamey, Niger</option>
+          <option value="Ndjamena,TD">N'Djamena, Chad</option>
+          <option value="Yaoundé,CM">Yaoundé, Cameroon</option>
+          <option value="Douala,CM">Douala, Cameroon</option>
+          <option value="Kinshasa,CD">Kinshasa, DR Congo</option>
+          <option value="Brazzaville,CG">Brazzaville, Congo</option>
+          <option value="Libreville,GA">Libreville, Gabon</option>
+          <option value="Malabo,GQ">Malabo, Equatorial Guinea</option>
+          <option value="Mogadishu,SO">Mogadishu, Somalia</option>
+          <option value="Djibouti,DJ">Djibouti City</option>
+          <option value="Asmara,ER">Asmara, Eritrea</option>
+          <option value="Windhoek,NA">Windhoek, Namibia</option>
+          <option value="Gaborone,BW">Gaborone, Botswana</option>
+          <option value="Mbabane,SZ">Mbabane, Eswatini</option>
+          <option value="Maseru,LS">Maseru, Lesotho</option>
+          <option value="Conakry,GN">Conakry, Guinea</option>
+          <option value="Freetown,SL">Freetown, Sierra Leone</option>
+          <option value="Monrovia,LR">Monrovia, Liberia</option>
+          <option value="Lome,TG">Lomé, Togo</option>
+          <option value="Cotonou,BJ">Cotonou, Benin</option>
+          <option value="Bangui,CF">Bangui, CAR</option>
+          <option value="Moroni,KM">Moroni, Comoros</option>
+          <option value="Port Louis,MU">Port Louis, Mauritius</option>
+          <option value="Victoria,SC">Victoria, Seychelles</option>
+        </optgroup>
+        <!-- OCEANIA -->
+        <optgroup label="🇦🇺 Oceania">
+          <option value="Sydney,AU">Sydney, Australia</option>
+          <option value="Melbourne,AU">Melbourne, Australia</option>
+          <option value="Brisbane,AU">Brisbane, Australia</option>
+          <option value="Perth,AU">Perth, Australia</option>
+          <option value="Adelaide,AU">Adelaide, Australia</option>
+          <option value="Canberra,AU">Canberra, Australia</option>
+          <option value="Darwin,AU">Darwin, Australia</option>
+          <option value="Hobart,AU">Hobart, Australia</option>
+          <option value="Cairns,AU">Cairns, Australia</option>
+          <option value="Gold Coast,AU">Gold Coast, Australia</option>
+          <option value="Auckland,NZ">Auckland, New Zealand</option>
+          <option value="Wellington,NZ">Wellington, New Zealand</option>
+          <option value="Christchurch,NZ">Christchurch, New Zealand</option>
+          <option value="Queenstown,NZ">Queenstown, New Zealand</option>
+          <option value="Suva,FJ">Suva, Fiji</option>
+          <option value="Nadi,FJ">Nadi, Fiji</option>
+          <option value="Port Moresby,PG">Port Moresby, Papua New Guinea</option>
+          <option value="Honiara,SB">Honiara, Solomon Islands</option>
+          <option value="Port Vila,VU">Port Vila, Vanuatu</option>
+          <option value="Apia,WS">Apia, Samoa</option>
+          <option value="Nuku'alofa,TO">Nukuʻalofa, Tonga</option>
+          <option value="South Tarawa,KI">South Tarawa, Kiribati</option>
+          <option value="Funafuti,TV">Funafuti, Tuvalu</option>
+          <option value="Yaren,NR">Yaren, Nauru</option>
+          <option value="Papeete,PF">Papeete, French Polynesia</option>
+          <option value="Noumea,NC">Nouméa, New Caledonia</option>
+          <option value="Pago Pago,AS">Pago Pago, American Samoa</option>
+        </optgroup>
+        <!-- ARCTIC / POLAR -->
+        <optgroup label="🧊 Polar Regions">
+          <option value="Longyearbyen,SJ">Longyearbyen, Svalbard</option>
+          <option value="Nuuk,GL">Nuuk, Greenland</option>
+          <option value="Barrow,US">Utqiaġvik (Barrow), Alaska</option>
+          <option value="Resolute,CA">Resolute, Canada</option>
+        </optgroup>
+      </select>
     </div>
 
-    <script>
-        const KEY = "YOUR API KEY";
-        let searchTimeout;
+    <div class="weather-vis">
+      <div class="wi-main" id="wiMain">🌤️</div>
+      <div>
+        <div class="temp-big"><span id="tempVal">--</span>°C</div>
+        <div class="desc-txt" id="descTxt">--</div>
+        <div class="feels-txt" id="feelsTxt">--</div>
+      </div>
+      <div class="dots">
+        <div class="dot dot-o"></div>
+        <div class="dot dot-b"></div>
+        <div class="dot dot-p"></div>
+        <div class="dot dot-e"></div>
+      </div>
+    </div>
 
-        async function searchGlobalCities(query) {
-            const list = document.getElementById('autocompleteList');
-            if (query.length < 3) { list.style.display = 'none'; return; }
+    <div class="city-tabs">
+      <div class="ctab" onclick="changeCity('Ajmer,IN')" id="ctab0">
+        <div class="ctab-name">Ajmer</div>
+        <div class="ctab-temp" id="ctab0t">--°C</div>
+      </div>
+      <div class="ctab active" onclick="changeCity('Etah,IN')" id="ctab1">
+        <div class="ctab-name">Etah</div>
+        <div class="ctab-temp" id="ctab1t">--°C</div>
+      </div>
+      <div class="ctab" onclick="changeCity('Agra,IN')" id="ctab2">
+        <div class="ctab-name">Agra</div>
+        <div class="ctab-temp" id="ctab2t">--°C</div>
+      </div>
+      <span class="ctab-arr">›</span>
+    </div>
+  </div>
 
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(async () => {
-                try {
-                    const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${KEY}`);
-                    const data = await res.json();
-                    if (data.length > 0) {
-                        list.innerHTML = data.map(city => `
-                            <div class="suggestion-item px-8 py-5" onclick="selectCity('${city.name}', ${city.lat}, ${city.lon}, '${city.country}')">
-                                <span class="font-bold text-lg">${city.name}</span>, ${city.state ? city.state + ', ' : ''}${city.country}
-                            </div>
-                        `).join('');
-                        list.style.display = 'block';
-                    } else { list.style.display = 'none'; }
-                } catch (e) { console.error(e); }
-            }, 400);
+  <!-- FORECAST ROW -->
+  <div class="fc-row" id="fcRow"></div>
+
+  <!-- CHART -->
+  <div class="card chart-card">
+    <div class="sec-title">Weather Forecast</div>
+    <div class="chart-wrap"><canvas id="fcChart"></canvas></div>
+  </div>
+
+  <!-- SUN -->
+  <div class="card sun-card">
+    <div class="sun-title">Sunrise & Sunset</div>
+    <div class="sun-item">
+      <div class="sun-ico">🌅</div>
+      <div>
+        <div class="sun-lbl">Sunrise</div>
+        <div class="sun-time" id="sunriseT">--</div>
+      </div>
+    </div>
+    <div class="sun-item">
+      <div class="sun-ico">🌇</div>
+      <div>
+        <div class="sun-lbl">Sunset</div>
+        <div class="sun-time" id="sunsetT">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-c">
+      <div class="stat-lbl"><span class="stat-ico">💧</span>Humidity</div>
+      <div class="stat-val"><span id="sHum">--</span><span class="stat-u"> %</span></div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-lbl"><span class="stat-ico">💨</span>Wind Speed</div>
+      <div class="stat-val"><span id="sWind">--</span><span class="stat-u"> km/h</span></div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-lbl"><span class="stat-ico">👁️</span>Visibility</div>
+      <div class="stat-val"><span id="sVis">--</span><span class="stat-u"> km</span></div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-lbl"><span class="stat-ico">🌡️</span>Pressure</div>
+      <div class="stat-val"><span id="sPress">--</span><span class="stat-u"> hPa</span></div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-lbl"><span class="stat-ico">☀️</span>UV Index</div>
+      <div class="stat-val"><span id="sUV">—</span></div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-lbl"><span class="stat-ico">🌧️</span>Precipitation</div>
+      <div class="stat-val"><span id="sRain">0</span><span class="stat-u"> mm</span></div>
+    </div>
+  </div>
+
+  <!-- AQI -->
+  <div class="card aqi-card">
+    <div class="aqi-l">
+      <div class="aqi-t">Air Quality Overview</div>
+      <div class="aqi-ring" id="aqiRing">
+        <div class="aqi-status" id="aqiStat">Good</div>
+        <div class="aqi-num" id="aqiNum">--</div>
+      </div>
+      <div class="aqi-cap" id="aqiCap">--</div>
+    </div>
+    <div class="aqi-r">
+      <div><div class="aqi-s-hd"><div class="aqi-dot" style="background:#22c55e"></div><span class="aqi-s-nm">PM10</span></div><div class="aqi-s-v" id="aPM10">--</div></div>
+      <div><div class="aqi-s-hd"><div class="aqi-dot" style="background:#eab308"></div><span class="aqi-s-nm">O3</span></div><div class="aqi-s-v" id="aO3">--</div></div>
+      <div><div class="aqi-s-hd"><div class="aqi-dot" style="background:#22c55e"></div><span class="aqi-s-nm">SO2</span></div><div class="aqi-s-v" id="aSO2">--</div></div>
+      <div><div class="aqi-s-hd"><div class="aqi-dot" style="background:#eab308"></div><span class="aqi-s-nm">PM2.5</span></div><div class="aqi-s-v" id="aPM25">--</div></div>
+      <div><div class="aqi-s-hd"><div class="aqi-dot" style="background:#f97316"></div><span class="aqi-s-nm">CO</span></div><div class="aqi-s-v" id="aCO">--</div></div>
+      <div><div class="aqi-s-hd"><div class="aqi-dot" style="background:#22c55e"></div><span class="aqi-s-nm">NO2</span></div><div class="aqi-s-v" id="aNO2">--</div></div>
+    </div>
+  </div>
+
+  <!-- RAIN -->
+  <div class="card rain-card">
+    <div class="rain-title">Chances of Rain</div>
+    <div id="rainBars"></div>
+    <div class="rb-pcls"><span>0%</span><span>50%</span><span>100%</span></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const KEY = '42caf9e1dba95d9e37f6898f36f43e48';
+const BASE = 'https://api.openweathermap.org/data/2.5/';
+let chart = null;
+let curCity = 'Etah,IN';
+
+function emoji(id, day) {
+  if (id >= 200 && id < 300) return '⛈️';
+  if (id >= 300 && id < 400) return '🌦️';
+  if (id >= 500 && id < 600) return id === 511 ? '🌨️' : id < 502 ? '🌧️' : '⛈️';
+  if (id >= 600 && id < 700) return id < 611 ? '❄️' : '🌨️';
+  if (id >= 700 && id < 800) return '🌫️';
+  if (id === 800) return day ? '☀️' : '🌙';
+  if (id === 801) return day ? '🌤️' : '🌙';
+  if (id === 802) return day ? '⛅' : '☁️';
+  return '☁️';
+}
+
+function isDay(dt, sr, ss) { return dt > sr && dt < ss; }
+
+function fmtTime(ts, tz) {
+  const d = new Date((ts + tz) * 1000);
+  let h = d.getUTCHours(), m = String(d.getUTCMinutes()).padStart(2,'0');
+  const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+  return `${String(h).padStart(2,'0')}:${m} ${ap}`;
+}
+
+function fmtDate(ts, tz) {
+  const d = new Date((ts + tz) * 1000);
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const mths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `Last Updated, ${days[d.getUTCDay()]} ${d.getUTCDate()} ${mths[d.getUTCMonth()]}`;
+}
+
+function dayName(ts, tz) {
+  const d = new Date((ts + tz) * 1000);
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getUTCDay()];
+}
+
+async function api(url) {
+  const r = await fetch(url);
+  return r.json();
+}
+
+async function loadTabTemp(city, id) {
+  try {
+    const d = await api(`${BASE}weather?q=${city}&appid=${KEY}&units=metric`);
+    if (d.main) document.getElementById(id).textContent = Math.round(d.main.temp) + '°C';
+  } catch(e) {}
+}
+
+async function changeCity(city) {
+  curCity = city;
+  document.getElementById('locSel').value = city;
+  const ldr = document.getElementById('loader');
+  ldr.style.opacity = '1'; ldr.style.pointerEvents = 'all';
+  await loadCity(city);
+  ldr.style.opacity = '0'; ldr.style.pointerEvents = 'none';
+}
+
+// ── SEARCH ENGINE ──────────────────────────────────────────────
+const searchInput   = document.getElementById('searchInput');
+const searchClear   = document.getElementById('searchClear');
+const sugBox        = document.getElementById('suggestions');
+const toastEl       = document.getElementById('toast');
+let debounceTimer   = null;
+let focusedIdx      = -1;
+let lastResults     = [];
+
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
+  const el = document.getElementById('navTime');
+  if (el) el.textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function showToast(msg, color = '#ef4444') {
+  toastEl.textContent = msg;
+  toastEl.style.background = color;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 3000);
+}
+
+function closeSuggestions() {
+  sugBox.classList.remove('open');
+  sugBox.innerHTML = '';
+  focusedIdx = -1;
+}
+
+function setFocused(idx) {
+  const items = sugBox.querySelectorAll('.sug-item');
+  items.forEach(el => el.classList.remove('focused'));
+  if (idx >= 0 && idx < items.length) {
+    items[idx].classList.add('focused');
+    items[idx].scrollIntoView({ block: 'nearest' });
+  }
+  focusedIdx = idx;
+}
+
+function renderSuggestions(results) {
+  lastResults = results;
+  focusedIdx = -1;
+  if (!results.length) {
+    sugBox.innerHTML = '<div class="sug-empty">😕 No results found. Try a different spelling or add the country name.</div>';
+    sugBox.classList.add('open');
+    return;
+  }
+  sugBox.innerHTML = results.map((r, i) => {
+    const parts = [r.state, r.country].filter(Boolean);
+    return `
+      <div class="sug-item" data-idx="${i}">
+        <span class="sug-pin">📍</span>
+        <div>
+          <div class="sug-main">${r.name}</div>
+          <div class="sug-sub">${parts.join(', ')}</div>
+        </div>
+        <span class="sug-country">${r.country || ''}</span>
+      </div>`;
+  }).join('');
+  sugBox.classList.add('open');
+
+  sugBox.querySelectorAll('.sug-item').forEach(el => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const r = lastResults[+el.dataset.idx];
+      selectResult(r);
+    });
+    el.addEventListener('mouseenter', () => {
+      setFocused(+el.dataset.idx);
+    });
+  });
+}
+
+async function fetchGeo(q) {
+  const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=6&appid=${KEY}`;
+  const r = await fetch(url);
+  return r.json();
+}
+
+async function doSearch(q) {
+  if (q.length < 2) { closeSuggestions(); return; }
+  sugBox.innerHTML = '<div class="sug-loading"><div class="sug-spin"></div> Searching…</div>';
+  sugBox.classList.add('open');
+  try {
+    const results = await fetchGeo(q);
+    if (!Array.isArray(results)) { closeSuggestions(); return; }
+    renderSuggestions(results);
+  } catch(e) {
+    closeSuggestions();
+    showToast('⚠️ Search failed. Check your connection.');
+  }
+}
+
+async function selectResult(r) {
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  closeSuggestions();
+
+  // Build city string for API using lat/lon for precision
+  const label = `${r.name}${r.state ? ', ' + r.state : ''}, ${r.country}`;
+  const ldr = document.getElementById('loader');
+  ldr.style.opacity = '1'; ldr.style.pointerEvents = 'all';
+
+  try {
+    // Use lat/lon direct API for precise lookups (villages, small towns)
+    const [cur, fc, aqiRaw] = await Promise.all([
+      api(`https://api.openweathermap.org/data/2.5/weather?lat=${r.lat}&lon=${r.lon}&appid=${KEY}&units=metric`),
+      api(`https://api.openweathermap.org/data/2.5/forecast?lat=${r.lat}&lon=${r.lon}&appid=${KEY}&units=metric`),
+      api(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${r.lat}&lon=${r.lon}&appid=${KEY}`)
+    ]);
+
+    curCity = `${r.name},${r.country}`;
+    document.getElementById('locSel').value = ''; // deselect dropdown
+
+    if (cur.cod !== 200) { showToast('❌ Could not load weather for this location.'); return; }
+
+    updateFromData(cur, fc, aqiRaw);
+  } catch(e) {
+    showToast('⚠️ Failed to load weather data.');
+  } finally {
+    ldr.style.opacity = '0'; ldr.style.pointerEvents = 'none';
+  }
+}
+
+// Refactor loadCity to share rendering with selectResult
+async function loadCity(city) {
+  const cur = await api(`${BASE}weather?q=${city}&appid=${KEY}&units=metric`);
+  if (cur.cod !== 200) { showToast('City not found: ' + city, '#f97316'); return; }
+  const [fc, aqi] = await Promise.all([
+    api(`${BASE}forecast?q=${city}&appid=${KEY}&units=metric`),
+    api(`${BASE}air_pollution?lat=${cur.coord.lat}&lon=${cur.coord.lon}&appid=${KEY}`)
+  ]);
+  updateFromData(cur, fc, aqi);
+}
+
+function updateFromData(cur, fc, aqi) {
+  const tz = cur.timezone, sr = cur.sys.sunrise, ss = cur.sys.sunset, dt = cur.dt;
+  const day = isDay(dt, sr, ss);
+  document.getElementById('cityName').textContent = cur.name + ', ' + cur.sys.country;
+  document.getElementById('lastUpdated').textContent = fmtDate(dt, tz);
+  document.getElementById('tempVal').textContent = Math.round(cur.main.temp);
+  document.getElementById('descTxt').textContent = cur.weather[0].description.replace(/\b\w/g, c => c.toUpperCase());
+  document.getElementById('feelsTxt').textContent = `Feels ${Math.round(cur.main.feels_like)}°C · Min ${Math.round(cur.main.temp_min)}° · Max ${Math.round(cur.main.temp_max)}°`;
+  const wi = document.getElementById('wiMain');
+  wi.textContent = emoji(cur.weather[0].id, day);
+  wi.className = 'wi-main ' + (day ? 'day' : 'night');
+  document.getElementById('sunriseT').textContent = fmtTime(sr, tz);
+  document.getElementById('sunsetT').textContent = fmtTime(ss, tz);
+  document.getElementById('sHum').textContent = cur.main.humidity;
+  document.getElementById('sWind').textContent = Math.round(cur.wind.speed * 3.6);
+  document.getElementById('sVis').textContent = (cur.visibility / 1000).toFixed(1);
+  document.getElementById('sPress').textContent = cur.main.pressure;
+  document.getElementById('sRain').textContent = cur.rain ? (cur.rain['1h'] || 0).toFixed(2) : '0.00';
+  document.body.style.backgroundImage = day
+    ? 'radial-gradient(ellipse at 10% 20%,rgba(59,130,246,.05) 0%,transparent 50%),radial-gradient(ellipse at 90% 80%,rgba(249,115,22,.05) 0%,transparent 50%)'
+    : 'radial-gradient(ellipse at 10% 20%,rgba(30,40,120,.08) 0%,transparent 50%),radial-gradient(ellipse at 90% 80%,rgba(20,10,80,.1) 0%,transparent 50%)';
+
+  // Forecast row
+  const dmap = {};
+  fc.list.forEach(it => {
+    const d = new Date((it.dt + tz) * 1000);
+    const k = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    const h = d.getUTCHours();
+    if (!dmap[k] || Math.abs(h - 12) < Math.abs(new Date((dmap[k].dt + tz) * 1000).getUTCHours() - 12)) dmap[k] = it;
+  });
+  const fcRow = document.getElementById('fcRow');
+  fcRow.innerHTML = '';
+  Object.values(dmap).slice(0, 7).forEach((it, i) => {
+    const dDay = isDay(it.dt, sr, ss);
+    const e = emoji(it.weather[0].id, dDay);
+    const lo = fc.list.filter(x => {
+      const d = new Date((x.dt + tz) * 1000);
+      const dk = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+      const ref = new Date((it.dt + tz) * 1000);
+      return dk === `${ref.getUTCFullYear()}-${ref.getUTCMonth()}-${ref.getUTCDate()}`;
+    });
+    const minT = Math.round(Math.min(...lo.map(x => x.main.temp)));
+    const maxT = Math.round(Math.max(...lo.map(x => x.main.temp)));
+    const div = document.createElement('div');
+    div.className = 'fc-day' + (i === 0 ? ' active' : '');
+    div.innerHTML = `<span class="fc-icon">${e}</span><div class="fc-name">${dayName(it.dt, tz)}</div><div class="fc-tmp">${maxT}°C</div><div class="fc-lo">${minT}°</div>`;
+    fcRow.appendChild(div);
+  });
+
+  // Chart
+  const dayData = {};
+  fc.list.forEach(it => {
+    const d = new Date((it.dt + tz) * 1000);
+    const k = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    if (!dayData[k]) dayData[k] = { temps: [], name: dayName(it.dt, tz) };
+    dayData[k].temps.push(it.main.temp);
+  });
+  const cLabels = [], cData = [];
+  Object.values(dayData).slice(0, 7).forEach(d => {
+    cLabels.push(d.name);
+    cData.push(+(d.temps.reduce((a, b) => a + b, 0) / d.temps.length).toFixed(1));
+  });
+  const ctx = document.getElementById('fcChart').getContext('2d');
+  if (chart) chart.destroy();
+  const grad = ctx.createLinearGradient(0, 0, 0, 150);
+  grad.addColorStop(0, 'rgba(59,130,246,.28)');
+  grad.addColorStop(1, 'rgba(59,130,246,0)');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: cLabels,
+      datasets: [{
+        data: cData,
+        borderColor: '#3b82f6',
+        backgroundColor: grad,
+        borderWidth: 2.5,
+        pointBackgroundColor: '#3b82f6',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2030',
+          titleColor: '#94a3b8',
+          bodyColor: '#f1f5f9',
+          borderColor: 'rgba(255,255,255,.07)',
+          borderWidth: 1,
+          padding: 9,
+          callbacks: { label: c => ` ${c.parsed.y}°C` }
         }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 } }, border: { display: false } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => v + '°' }, border: { display: false } }
+      }
+    }
+  });
 
-        async function selectCity(name, lat, lon, country) {
-            document.getElementById('citySearch').value = `${name}, ${country}`;
-            document.getElementById('autocompleteList').style.display = 'none';
-            showStatus(`🛰️ Establishing secure link with ${name} satellite...`);
+  // Rain bars
+  const rainMap = {};
+  fc.list.forEach(it => {
+    const d = new Date((it.dt + tz) * 1000);
+    const k = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    if (!rainMap[k]) rainMap[k] = { pops: [], name: dayName(it.dt, tz) };
+    rainMap[k].pops.push(it.pop || 0);
+  });
+  const rb = document.getElementById('rainBars');
+  rb.innerHTML = '';
+  Object.values(rainMap).slice(0, 7).forEach(d => {
+    const pct = Math.round(d.pops.reduce((a, b) => a + b, 0) / d.pops.length * 100);
+    rb.innerHTML += `<div class="rb-item"><div class="rb-day">${d.name}</div><div class="rb-track"><div class="rb-fill" style="width:${Math.max(pct, 3)}%"></div></div></div>`;
+  });
 
-            try {
-                const [wRes, fRes] = await Promise.all([
-                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${KEY}&units=metric`),
-                    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${KEY}&units=metric`)
-                ]);
+  // AQI
+  if (aqi && aqi.list && aqi.list[0]) {
+    const comp = aqi.list[0].components;
+    const qi = aqi.list[0].main.aqi;
+    const stats = ['', 'Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'];
+    const cols = ['', '#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+    const c = cols[qi] || '#22c55e';
+    document.getElementById('aqiNum').textContent = qi;
+    document.getElementById('aqiStat').textContent = stats[qi] || 'Good';
+    document.getElementById('aqiStat').style.color = c;
+    document.getElementById('aqiNum').style.color = c;
+    document.getElementById('aqiCap').textContent = qi <= 2 ? 'Air is clean and healthy' : qi <= 3 ? 'Air quality is acceptable' : 'Air quality is unhealthy';
+    const ring = document.getElementById('aqiRing');
+    ring.style.background = `linear-gradient(#161922,#161922) padding-box, linear-gradient(135deg,${c},${c}88) border-box`;
+    ring.style.boxShadow = `0 0 28px ${c}33`;
+    document.getElementById('aPM10').textContent = Math.round(comp.pm10 || 0);
+    document.getElementById('aO3').textContent = Math.round(comp.o3 || 0);
+    document.getElementById('aSO2').textContent = Math.round(comp.so2 || 0);
+    document.getElementById('aPM25').textContent = Math.round(comp.pm2_5 || 0);
+    document.getElementById('aCO').textContent = Math.round(comp.co || 0);
+    document.getElementById('aNO2').textContent = Math.round(comp.no2 || 0);
+  }
+}
 
-                const wData = await wRes.json();
-                const fData = await fRes.json();
+// Search events
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  searchClear.style.display = q ? 'block' : 'none';
+  clearTimeout(debounceTimer);
+  if (!q) { closeSuggestions(); return; }
+  debounceTimer = setTimeout(() => doSearch(q), 380);
+});
 
-                renderUI(wData, fData, country);
-                document.getElementById('status').classList.add('hidden');
-            } catch (err) { showStatus("Connection disrupted.", "text-rose-400"); }
-        }
+searchInput.addEventListener('keydown', e => {
+  const items = sugBox.querySelectorAll('.sug-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    setFocused(Math.min(focusedIdx + 1, items.length - 1));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    setFocused(Math.max(focusedIdx - 1, 0));
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (focusedIdx >= 0 && lastResults[focusedIdx]) {
+      selectResult(lastResults[focusedIdx]);
+    } else if (searchInput.value.trim()) {
+      // Direct search without selecting a suggestion
+      const q = searchInput.value.trim();
+      closeSuggestions();
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+      changeCity(q);
+    }
+  } else if (e.key === 'Escape') {
+    closeSuggestions();
+    searchInput.blur();
+  }
+});
 
-        function renderUI(w, f, country) {
-            document.getElementById('hero').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  closeSuggestions();
+  searchInput.focus();
+});
 
-            // Current Weather
-            document.getElementById('location').innerText = w.name;
-            document.getElementById('countryCode').innerText = country;
-            document.getElementById('temp').innerText = `${Math.round(w.main.temp)}°`;
-            document.getElementById('desc').innerText = w.weather[0].description;
-            document.getElementById('hum').innerText = `${w.main.humidity}%`;
-            document.getElementById('wind').innerText = `${w.wind.speed} m/s`;
-            document.getElementById('prs').innerText = `${w.main.pressure} hPa`;
-            document.getElementById('feel').innerText = `${Math.round(w.main.feels_like)}°`;
-            document.getElementById('sea').innerText = w.main.sea_level || "N/A";
-            document.getElementById('vis').innerText = `${(w.visibility / 1000).toFixed(1)} km`;
-            document.getElementById('tMin').innerText = `${Math.round(w.main.temp_min)}°`;
-            document.getElementById('tMax').innerText = `${Math.round(w.main.temp_max)}°`;
-            document.getElementById('mainIcon').src = `https://openweathermap.org/img/wn/${w.weather[0].icon}@4x.png`;
+function triggerSearch() {
+  const q = searchInput.value.trim();
+  if (!q) { searchInput.focus(); return; }
+  closeSuggestions();
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  changeCity(q);
+}
 
-            // 24-Hour Hourly Forecast
-            const hourlyContainer = document.getElementById('hourlyContainer');
-            hourlyContainer.innerHTML = f.list.slice(0, 8).map(item => `
-                <div class="glass min-w-[160px] p-8 rounded-[2.5rem] text-center card-hover">
-                    <p class="text-slate-500 text-xs font-black uppercase mb-2">${new Date(item.dt * 1000).getHours()}:00</p>
-                    <img src="https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png" class="mx-auto w-16 h-16" alt="">
-                    <p class="text-3xl font-black mt-2">${Math.round(item.main.temp)}°</p>
-                </div>
-            `).join('');
+// Close suggestions when clicking outside
+document.addEventListener('click', e => {
+  if (!document.getElementById('searchWrap').contains(e.target)) {
+    closeSuggestions();
+  }
+});
 
-            // 5-Day Daily Forecast (Filtering for 12:00 PM each day)
-            const dailyContainer = document.getElementById('dailyContainer');
-            const dailyData = f.list.filter(item => item.dt_txt.includes("12:00:00"));
-            dailyContainer.innerHTML = dailyData.map(day => `
-                <div class="glass p-8 rounded-[2.5rem] text-center card-hover flex flex-col items-center">
-                    <p class="text-sky-400 text-xs font-black uppercase mb-4">${new Date(day.dt * 1000).toLocaleDateString([], {weekday: 'short'})}</p>
-                    <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" class="w-16 h-16" alt="">
-                    <p class="text-3xl font-black mt-4">${Math.round(day.main.temp)}°</p>
-                    <p class="text-[10px] text-slate-500 uppercase mt-2 tracking-widest">${day.weather[0].main}</p>
-                </div>
-            `).join('');
-        }
+// Init
+(async () => {
+  const ldr = document.getElementById('loader');
+  await loadCity('Etah,IN');
+  ldr.style.opacity = '0'; ldr.style.pointerEvents = 'none';
+  loadTabTemp('Ajmer,IN', 'ctab0t');
+  loadTabTemp('Etah,IN', 'ctab1t');
+  loadTabTemp('Agra,IN', 'ctab2t');
+})();
 
-        function showStatus(msg, color = "text-sky-400") {
-            const s = document.getElementById('status');
-            s.className = `p-4 rounded-2xl text-center font-bold glass ${color}`;
-            s.innerText = msg; s.classList.remove('hidden');
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#citySearch')) document.getElementById('autocompleteList').style.display = 'none';
-        });
-    </script>
+setInterval(() => loadCity(curCity), 600000);
+</script>
 </body>
 </html>
